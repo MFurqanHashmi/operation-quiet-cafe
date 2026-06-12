@@ -17,6 +17,10 @@ class Session:
     # per-session key material (lazy)
     bob_priv: Optional[str] = None
     bob_pub: Optional[str] = None
+    eve_priv: Optional[str] = None
+    eve_pub: Optional[str] = None
+    alice_priv: Optional[str] = None
+    alice_pub: Optional[str] = None
     sym_key: Optional[str] = None
     totp_seed: Optional[str] = None
     passkey_nonce: Optional[str] = None
@@ -26,6 +30,10 @@ class Session:
     def ensure_keys(self):
         if not self.bob_priv:
             self.bob_priv, self.bob_pub = pubkey.new_keypair()
+        if not self.eve_priv:
+            self.eve_priv, self.eve_pub = pubkey.new_keypair()
+        if not self.alice_priv:
+            self.alice_priv, self.alice_pub = pubkey.new_keypair()
         if not self.sym_key:
             self.sym_key = symmetric.new_key()
         if not self.totp_seed:

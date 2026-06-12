@@ -48,6 +48,9 @@ function ActorPane({ actor, active }: { actor: Actor; active: boolean }) {
           ))}
         </AnimatePresence>
         {mine.length === 0 && !isEve && <div className="pane-quiet">&mdash; quiet &mdash;</div>}
+        {isEve && mine.length === 0 && !state.keyExposed && !state.eveNoise && (
+          <div className="pane-quiet eve-watch">&mdash; just watching &mdash;</div>
+        )}
       </div>
     </motion.div>
   );

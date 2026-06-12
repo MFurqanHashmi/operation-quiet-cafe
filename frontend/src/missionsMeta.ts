@@ -16,6 +16,20 @@ export interface MissionMeta {
   debrief: string;         // payoff after the code
   whyItMatters: string;    // single woven paragraph (no tracks)
   codeHint: string;        // where the code surfaces
+  recall: {                // ties the mission to a concept from the talk
+    phrase?: string;
+    body: string;
+  };
+  predict?: {              // commit-a-hypothesis gate (think before acting)
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+    whyCorrect: string;
+  };
+  checkpoint?: {           // deduction MCQ (answer validated server-side by index)
+    prompt: string;
+    options: string[];
+  };
 }
 
 export const ACTOR_LABEL: Record<Actor, string> = {
@@ -37,18 +51,32 @@ export const MISSIONS: MissionMeta[] = [
     brief:
       "You slip into the chair two tables over. Alice and Bob think the café Wi-Fi is private. You open your laptop and start listening.",
     running:
-      "Alice and Bob are chatting on a loop right now — every line is crossing the open air between them.",
-    goal: "Tap the wire and read what they're saying. Somewhere in that chatter is today's code word.",
+      "Alice, Bob, the barista, an ad beacon and the router are all chattering on the open air — a realistic jumble of traffic, only some of it sensitive.",
+    goal: "Tap the wire. Six messages crossed it in the clear — but only one would actually compromise the operation. Read them, judge them, and flag the real leak.",
     hints: [
-      "Nothing here is locked. You don't need to break anything — just read.",
-      "Watch the messages scroll. One line is literally handing you a code word.",
-      "The code word is wrapped in QC{...}. Copy it exactly, braces and all.",
+      "Nothing here is locked, so read everything. The skill isn't decoding — it's judgement: which line actually helps an attacker?",
+      "Ignore the noise that only LOOKS sensitive — a promo code, an internal IP, even the café's public guest Wi-Fi password. Those cost an attacker nothing.",
+      "Find the line that exposes the operation itself — a place, a time, a combination. Flag that one to pull today's code.",
     ],
     debrief:
       "That's the whole problem in one move. On an open network, every word is a postcard — anyone two tables over can read it. This is why the rest of the café exists.",
     whyItMatters:
       "For the people approving the budget, this is the cost of 'we'll add security later' — until you encrypt, every message is a postcard. For the people writing the code, it's why http:// and plaintext anything (logs, tokens, internal calls) is a quiet liability even inside a 'trusted' network.",
-    codeHint: "It scrolls past in the tapped conversation — read Alice's third line.",
+    codeHint: "Flag the one message that truly leaks the operation. Pick right and the code is yours; pick a decoy and you'll get a nudge.",
+    recall: {
+      phrase: "Why can't the person two tables over read it?",
+      body: "Remember the opening question of the talk: your message hops through routers and Wi-Fi you don't control, and by default it travels in the clear.",
+    },
+    predict: {
+      prompt: "You're about to read raw cafe traffic with no decryption key. What will the messages look like?",
+      options: [
+        "Scrambled - you'll have to crack each one",
+        "Plain and readable - no key needed",
+        "Only metadata; the contents stay hidden",
+      ],
+      correctIndex: 1,
+      whyCorrect: "Nothing here is encrypted, so every word is readable - exactly the exposure the rest of the cafe is built to fix.",
+    },
   },
   {
     n: 2,
@@ -61,19 +89,41 @@ export const MISSIONS: MissionMeta[] = [
     seat: "Sender",
     brief:
       "You leave Eve's corner and take your own seat. You're Alice now, and you've learned your lesson — this message goes out scrambled.",
-    running: "Bob is waiting at the bench, ready to unscramble whatever you send.",
+    running: "Bob is waiting at the bench, ready to unscramble whatever you send — if only he had the key. Eve is still listening.",
     goal:
-      "Write a message, scramble it, and send it to Bob. He'll reply with the code word. Then ask the obvious question: how did Bob get the key?",
+      "Scramble a message, then make the real call: how do you get the shared key to Bob? Try it, watch what happens, then answer why it failed.",
     hints: [
-      "Type anything, hit Scramble, and watch readable text turn to noise.",
-      "Send the scrambled message — Bob shares the same key, so he can read it. His reply carries the code.",
-      "Then press 'Send Bob the key' and watch the wire. Notice who else just caught it.",
+      "Type anything and hit Scramble — readable text turns to noise. That part's easy. The hard part is the key.",
+      "You must pick how to deliver the key to Bob. Go ahead and try the obvious one and watch the wire — the failure is the lesson.",
+      "Once you've seen it go wrong, the checkpoint asks WHY. The answer isn't about the cipher — it's about the key being the same on both ends and travelling in the open.",
     ],
     debrief:
       "One key locked it AND unlocked it — that's symmetric encryption: fast and simple. But you just watched the catch: to use it, Alice and Bob both need the same key, and the moment you send it, Eve grabs it too. That's the wall Mission 3 breaks.",
     whyItMatters:
       "For the strategy side, this is why 'just encrypt it' is never the whole story — the hard, expensive part is key distribution, not the scrambling. For the build side, it's the intuition behind why we don't ship a shared secret in the repo or pass one over the same channel we're trying to protect.",
-    codeHint: "Bob's reply contains it — but only after he successfully unscrambles your message.",
+    codeHint: "It's released when you correctly diagnose why Eve could read the message — answer the checkpoint to earn it.",
+    recall: {
+      phrase: "The hard part was never the scrambling - it's that both sides need the same key first.",
+      body: "From the talk: symmetric encryption uses one key to lock AND unlock. Scrambling is easy; getting that single key to the other side safely is the whole problem.",
+    },
+    predict: {
+      prompt: "You're about to send Bob the shared key over the same cafe Wi-Fi. What does Eve, still listening, end up with?",
+      options: [
+        "Nothing - the key is itself protected",
+        "A full copy of the key, so she can read everything",
+        "Only half the key, which is useless to her",
+      ],
+      correctIndex: 1,
+      whyCorrect: "One key both locks and unlocks, and you just sent it down the very line Eve is watching.",
+    },
+    checkpoint: {
+      prompt: "Eve read your message the instant the key crossed the wire. Why?",
+      options: [
+        "The AES encryption was too weak to hold up",
+        "The same key both locks and unlocks — and it travelled in the open",
+        "Bob accidentally used the wrong key to decrypt",
+      ],
+    },
   },
   {
     n: 3,
@@ -86,19 +136,33 @@ export const MISSIONS: MissionMeta[] = [
     seat: "Sender",
     brief:
       "Still Alice. Bob has pinned a public padlock to the board — anyone can take it, but only Bob can open what it locks.",
-    running: "Eve is still recording everything that crosses the wire. Let her.",
+    running: "Eve is still recording everything — and her own public key is sitting on the board too, hoping you'll grab the wrong one.",
     goal:
-      "Grab Bob's public key, lock your message with it, and send. Bob opens it with his private key. Check what Eve captured.",
+      "Your keyring shows three public keys — Bob's, Eve's, and your own. Lock the message so ONLY Bob can open it. Choose carefully: the wrong padlock plays out for real.",
     hints: [
-      "First fetch Bob's public padlock. Note its fingerprint — you'll meet that idea again next mission.",
-      "Lock your message with Bob's PUBLIC key, then send. His PRIVATE key is the only thing that opens it.",
-      "Open Eve's recording — this time it's pure noise. Bob's reply has the code.",
+      "A public key locks; only the matching private key unlocks. So whose key should you lock with — the sender's, or the person you want to read it?",
+      "Lock with Eve's key and Eve's private key opens it. Lock with your OWN key and only you could open it — Bob can't. Neither reaches Bob safely.",
+      "To reach Bob and only Bob, lock with Bob's public key. His private key is the one thing on earth that opens it.",
     ],
     debrief:
       "Two different keys: one you hand to the whole world, one you never share. Alice never had to send Bob a secret — and Eve recorded the entire exchange and got nothing but noise. That's the leap that makes the internet possible. (Curious how they agree on a key without sending one at all? Open the Tradecraft below.)",
     whyItMatters:
       "For the decision-makers, this is the quiet machinery behind every 'https' and every secure login your product relies on — worth knowing it exists and why it's non-negotiable. For the engineers, it's the difference between symmetric and asymmetric crypto, and why TLS uses the slow two-key dance only to bootstrap a fast shared key.",
-    codeHint: "Inside Bob's decrypted reply — which only works via the public/private key path.",
+    codeHint: "Inside Bob's decrypted reply — which only appears when you've locked with the correct key (his).",
+    recall: {
+      phrase: "One key you hand out, one key you never do.",
+      body: "The heart of the talk: a public key that only locks (safe to give anyone) and a private key that only unlocks (never shared). The secret never has to cross the wire.",
+    },
+    predict: {
+      prompt: "A public key can LOCK a message but not unlock it. Eve grabs a public key off the open board. What can she do with it?",
+      options: [
+        "Unlock any message that was locked with it",
+        "Only lock new messages - never unlock",
+        "Both lock and unlock, since it's public",
+      ],
+      correctIndex: 1,
+      whyCorrect: "A public key is one-way: it only locks. That's exactly why it's safe to hand out - now the real question is whose public key reaches Bob.",
+    },
   },
   {
     n: 4,
@@ -113,17 +177,39 @@ export const MISSIONS: MissionMeta[] = [
       "New job, same seat: today you verify. Two doors both claim to be Bob's drop site. Both show a padlock. Only one is really him.",
     running: "An impostor has set up a look-alike door, hoping you won't check the details.",
     goal:
-      "Inspect both doors' certificates. Compare each fingerprint against Bob's known-good one, then walk through the real door.",
+      "Inspect both doors' certificates and compare each fingerprint to Bob's known-good one. Walk through the real door — pick wrong and you'll find out who's really behind it. Then say what gave the fake away.",
     hints: [
-      "Inspect each door. A padlock alone means 'encrypted' — not 'trustworthy'.",
-      "Compare each door's fingerprint and issuer to Bob's known-good fingerprint shown at the top.",
-      "The impostor's cert is self-signed by an unknown issuer and the fingerprint won't match. Choose the door that does.",
+      "Inspect both doors. Don't be fooled by the name or the padlock — anyone can copy a name, and both lines are encrypted.",
+      "The one thing that can't be faked is the fingerprint. Compare each door's against Bob's known-good value at the top.",
+      "Pick the door whose fingerprint matches exactly. Then the checkpoint asks what exposed the fake — focus on the fingerprint, not the name or the padlock.",
     ],
     debrief:
       "Both lines were encrypted. One was encrypted straight to an impostor. The padlock only ever proved the connection was locked — never who was holding the other end. That's what certificates and trusted issuers are for.",
     whyItMatters:
       "For the business, this is why 'it has the padlock, it's safe' is a dangerous half-truth your teams and customers fall for in phishing. For engineers, it's why we pin/verify certificates and don't blindly set verify=False to make an error go away.",
-    codeHint: "The genuine door serves it on entry; the impostor only throws a warning.",
+    codeHint: "Verify the real door, then nail the checkpoint on what exposed the fake — the code is released once you've done both.",
+    recall: {
+      phrase: "Encryption is not trust.",
+      body: "From the padlock slide: the padlock proves the line is encrypted - not who's on the other end. A phishing site gets a padlock too. Identity comes from the certificate's fingerprint.",
+    },
+    predict: {
+      prompt: "Two doors show the same name and both display a padlock. What's the one thing the impostor canNOT fake?",
+      options: [
+        "The padlock icon",
+        "The site's displayed name",
+        "The certificate fingerprint tied to Bob's real key",
+      ],
+      correctIndex: 2,
+      whyCorrect: "Names and padlocks are free to copy; only the fingerprint binds to Bob's actual key, which the impostor doesn't have.",
+    },
+    checkpoint: {
+      prompt: "Both doors showed a padlock and an encrypted line. What actually exposed the impostor?",
+      options: [
+        "The impostor had no padlock / no encryption",
+        "The impostor's name was different from Bob's",
+        "The impostor's fingerprint didn't match Bob's known-good one",
+      ],
+    },
   },
   {
     n: 5,
@@ -136,19 +222,41 @@ export const MISSIONS: MissionMeta[] = [
     seat: "Operator",
     brief:
       "You flip sides for good. You're Bob now — defending the very station everyone's been trying to reach. Attackers are hammering the door with password guesses.",
-    running: "Eve is in the corner trying password after password against your station. Each one bounces.",
+    running: "Eve is in the corner trying password after password against your station. Each one bounces — and she'll keep at it while you set up the right way in.",
     goal:
-      "Log in the right way: generate a key, install its public half on the station, and connect with key auth — no password ever crosses the wire.",
+      "Generate your key pair, then make the call: which key do you install on the station? Choose wrong and you'll see the damage. Get in, then explain what actually crossed the wire.",
     hints: [
-      "Press 'Secure login'. Watch each step: a fresh key is made, the public half is installed, then you connect.",
-      "Notice the order — only the PUBLIC half is ever sent to the station. Your private key never leaves your laptop.",
-      "After login, your sealed orders (the code) are read straight off the station.",
+      "You made two keys. One is safe to publish anywhere; one must never leave this laptop. Which one does a server need to recognise you?",
+      "Installing your PRIVATE key on a shared box is the tempting mistake — now anyone who breaches it becomes you. The server only ever needs your PUBLIC key.",
+      "Install the public key, log in by signature, then answer the checkpoint: nothing reusable — not your password, not your private key — ever crosses the wire.",
     ],
     debrief:
       "Eve can guess passwords forever and never get in, because there's no password to guess. Your private key stayed on your laptop the whole time; only the public half — useless on its own — ever touched the station. That's why SSH key auth beats passwords.",
     whyItMatters:
       "For leadership, this reframes credentials: the strongest login is the one where the secret never travels and can't be phished or guessed. For engineers, it's the everyday case for SSH keys (and disabling password auth) on every server and Git host you touch.",
-    codeHint: "It's a file waiting on the station — readable only after a real key-based login.",
+    codeHint: "Read off the station after a real key-based login — released once you also answer what crossed the wire.",
+    recall: {
+      phrase: "Nothing secret ever travels - so there's nothing on the wire to steal.",
+      body: "From the SSH slide: instead of sending a password, the server sends a puzzle, your machine solves it with your private key, and the server checks it with your public key. The private key never leaves your laptop.",
+    },
+    predict: {
+      prompt: "Your private key's only job is to prove it's you. What happens the moment a copy of it sits on a machine someone else can breach?",
+      options: [
+        "Nothing - it's safe as long as it's encrypted at rest",
+        "Anyone who grabs it can impersonate you everywhere it's trusted",
+        "It automatically rotates itself for safety",
+      ],
+      correctIndex: 1,
+      whyCorrect: "A private key is you. If it can be copied off a shared box, your identity walks out the door - so now decide which half actually belongs on the server.",
+    },
+    checkpoint: {
+      prompt: "You logged in with a key, no password typed. During that login, what actually crossed the wire?",
+      options: [
+        "Your password, but encrypted",
+        "Your private key, sent securely to the server",
+        "Only a signature proving you hold the private key — the key itself never moved",
+      ],
+    },
   },
   {
     n: 6,
@@ -163,17 +271,39 @@ export const MISSIONS: MissionMeta[] = [
       "Still Bob, at the vault door of your drop site. The old password field is crossed out. Two modern locks remain: a rotating code, and a passwordless key.",
     running: "Eve has given up guessing — there's nothing left for her to steal.",
     goal:
-      "First prove a rotating code (TOTP) works. Then retire the password entirely with a passwordless challenge to open the vault.",
+      "Test the rotating code two ways — try replaying an old one, then the live one — to feel why it's time-bound. Then go passwordless to open the vault, and explain why a passkey can't be phished.",
     hints: [
-      "Reveal the authenticator. The 6-digit code is derived from a shared seed + the clock — submit the live one.",
-      "Then request a passkey challenge. Your device signs a one-time challenge instead of sending any secret.",
-      "When the signature verifies, the vault opens and hands you the final code.",
+      "Reveal the authenticator, then deliberately try the 'replay an old code' button. Watch the vault reject it — a recorded code is useless seconds later.",
+      "Now submit the LIVE code; it's accepted. Then request a passkey challenge — your device signs it instead of sending any secret.",
+      "After the signature verifies, the checkpoint asks why passkeys resist phishing. The key idea: the server stores no secret to steal, and there's nothing to type into a fake site.",
     ],
     debrief:
       "A rotating code means an intercepted login is useless within 30 seconds. A passkey goes further — there's no shared secret at all, just a signature only your device can produce. You can't steal a password that doesn't exist.",
     whyItMatters:
       "For the org, this is the punchline of the whole talk: stolen credentials cause most breaches, and passkeys delete the thing being stolen — fewer takeovers, less phishing risk. For engineers, it's why TOTP/WebAuthn and passwordless flows are worth the integration cost.",
-    codeHint: "The vault releases it only after a passwordless challenge verifies.",
+    codeHint: "Released after your passwordless login verifies and you answer why passkeys beat phishing.",
+    recall: {
+      phrase: "You can't steal a password that doesn't exist.",
+      body: "From the final section: a 6-digit code is seed + time recomputed on both ends - better than a password but still a shared secret. Passkeys remove the secret entirely; the server holds only your public key.",
+    },
+    predict: {
+      prompt: "You record someone's live 6-digit code and try to reuse it 90 seconds later. What happens?",
+      options: [
+        "It works - codes can be reused",
+        "It's rejected - the code already expired",
+        "It works once more, then never again",
+      ],
+      correctIndex: 1,
+      whyCorrect: "TOTP codes are bound to a ~30-second window, so a captured code is dead almost immediately - that's the whole point.",
+    },
+    checkpoint: {
+      prompt: "Phishing thrives on stealing a secret you type. Why are passkeys phishing-resistant?",
+      options: [
+        "The password is just much longer and harder to guess",
+        "There's no shared secret stored on the server for anyone to steal or phish",
+        "The 6-digit code rotates every 30 seconds",
+      ],
+    },
   },
 ];
 

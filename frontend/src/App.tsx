@@ -69,8 +69,13 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-      <main className="main">
-        <Stage activeActor={m.actor} />
+      <div className="deck">
+        <div className="deck-inner">
+          <div className="deck-label">Observation deck &mdash; the café, live</div>
+          <Stage activeActor={m.actor} />
+        </div>
+      </div>
+      <main className="workspace">
         <MissionConsole />
       </main>
     </div>

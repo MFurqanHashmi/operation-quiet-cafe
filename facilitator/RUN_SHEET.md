@@ -38,6 +38,14 @@ flying, point them at the **Tradecraft** drop-downs (real tools + docs).
 3. **Bob (M5–M6):** the defense — kill the password, so there's nothing left to steal.
 The M2 → M3 cliffhanger ("but how did Bob get the key?!") is the spine. Let them feel the wall in M2 before relieving it in M3.
 
+## How each mission makes them think (new flow)
+Every mission now runs the same loop, so coach to it:
+1. **From the talk** — a recall ribbon links the mission to the exact slide idea ("one key you hand out, one you never do", "encryption is not trust", etc.).
+2. **Predict first** — before acting, they commit to a hypothesis about what will happen. This forces reasoning from the concept. Wrong guesses are fine — the point is to commit, then see.
+3. **Do it** — the real decision plays out live (Eve actually decrypts, the impostor answers, the stale code is rejected).
+4. **Checkpoint** — a deduction question gates the confirmation code.
+5. **Tradecraft (optional, engineer depth)** — a collapsible guided **terminal** where they type *real* commands (tcpdump, openssl, ssh-keygen, oathtool, …) and get real output computed from their own session keys. It has 2–3 steps, hints, and after two misses it reveals the canonical command so nobody stalls. This is where fast engineers go deep instead of finishing early — point them there.
+
 ## Recovery / facilitation tips
 - **Click any mission number** in the top bar to jump there (e.g. to demo, or unstick a table).
 - Each mission has progressive **"Stuck?"** nudges — encourage those before you step in.
@@ -49,7 +57,7 @@ The M2 → M3 cliffhanger ("but how did Bob get the key?!") is the spine. Let th
 ```bash
 SID=$(curl -s -XPOST localhost:8080/api/session | python3 -c "import sys,json;print(json.load(sys.stdin)['session_id'])")
 curl -s -XPOST localhost:8080/api/mission/1/enter -H 'Content-Type: application/json' -d "{\"session_id\":\"$SID\"}" >/dev/null
-curl -s -XPOST localhost:8080/api/mission/1/action -H 'Content-Type: application/json' -d "{\"session_id\":\"$SID\",\"action\":\"tap\"}" | grep -q 'walls_have_ears' && echo "M1 OK" || echo "M1 FAIL"
+curl -s -XPOST localhost:8080/api/mission/1/action -H 'Content-Type: application/json' -d "{\"session_id\":\"$SID\",\"action\":\"accuse\",\"params\":{\"line_id\":\"i5\"}}" | grep -q 'walls_have_ears' && echo "M1 OK" || echo "M1 FAIL"
 curl -s -XPOST localhost:8080/api/mission/1/verify -H 'Content-Type: application/json' -d "{\"session_id\":\"$SID\",\"code\":\"QC{walls_have_ears}\"}" | grep -q '"correct": true' && echo "VERIFY OK" || echo "VERIFY FAIL"
 ```
 Expected: `M1 OK` then `VERIFY OK`.

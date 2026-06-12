@@ -71,7 +71,7 @@ function reducer(st: State, a: Action): State {
               },
             ]),
           };
-        case "packet.sent":
+        case "packet.sent": {
           return {
             ...st,
             packets: cap([
@@ -86,10 +86,15 @@ function reducer(st: State, a: Action): State {
               },
             ], 8),
           };
+        }
         case "eve.capture":
           return { ...st, eveNoise: !!payload.noise };
         case "key.exposed":
-          return { ...st, keyExposed: true, flash: { kind: "exposed", ts: Date.now() } };
+          return {
+            ...st,
+            keyExposed: true,
+            flash: { kind: "exposed", ts: Date.now() },
+          };
         case "key.published":
           return { ...st, bobFingerprint: payload.pubkey_fingerprint };
         case "ssh.step":
@@ -194,6 +199,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const goPhase = (p: Phase) => dispatch({ t: "PHASE", p });
   const goMission = (n: number) => dispatch({ t: "MISSION", n });
+
 
   return (
     <StoreCtx.Provider value={{ state, start, enter, doAction, verify, reset, goPhase, goMission }}>
