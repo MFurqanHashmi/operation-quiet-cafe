@@ -32,15 +32,3 @@ export interface Packet {
   cipher?: string | null;
 }
 
-export interface FxItem {
-  id: string;
-  kind:
-    | "plaintext_grab"
-    | "key_grab"
-    | "pubkey_roundtrip"
-    | "eve_decrypts"
-    | "granted"
-    | "denied";
-  preview?: string;
-  ts: number;
-}

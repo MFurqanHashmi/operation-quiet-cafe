@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../store";
 import { ACTOR_LABEL } from "../missionsMeta";
 import type { Actor } from "../types";
-import FxLayer from "./FxLayer";
 
 const COLORS: Record<string, string> = {
   alice: "var(--alice)",
@@ -49,6 +48,9 @@ function ActorPane({ actor, active }: { actor: Actor; active: boolean }) {
           ))}
         </AnimatePresence>
         {mine.length === 0 && !isEve && <div className="pane-quiet">&mdash; quiet &mdash;</div>}
+        {isEve && mine.length === 0 && !state.keyExposed && !state.eveNoise && (
+          <div className="pane-quiet eve-watch">&mdash; just watching &mdash;</div>
+        )}
       </div>
     </motion.div>
   );
@@ -89,7 +91,6 @@ export default function Stage({ activeActor }: { activeActor: Actor }) {
         <ActorPane actor="eve" active={activeActor === "eve"} />
       </div>
       <WireStrip />
-      <FxLayer />
     </div>
   );
 }
