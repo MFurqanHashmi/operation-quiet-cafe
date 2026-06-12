@@ -1,0 +1,29 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    expose:
+      - "8000"
+    depends_on:
+      - station-bravo
+    environment:
+      - STATION_HOST=station-bravo
+      - STATION_PORT=22
+    restart: unless-stopped
+
+  station-bravo:
+    build: ./station-bravo
+    expose:
+      - "22"
+    restart: unless-stopped
+
+networks:
+  default:
+    name: quiet-cafe-net
