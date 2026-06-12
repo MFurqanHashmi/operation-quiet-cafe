@@ -23,6 +23,12 @@ def verify_totp(seed: str, code: str) -> bool:
     return pyotp.TOTP(seed).verify(code, valid_window=1)
 
 
+def stale_code(seed: str) -> str:
+    """A code that was valid ~90s ago — used to prove replays are rejected."""
+    import time
+    return pyotp.TOTP(seed).at(time.time() - 90)
+
+
 def sign_challenge(priv_pem: str, nonce: str) -> str:
     priv = serialization.load_pem_private_key(priv_pem.encode(), password=None)
     sig = priv.sign(
