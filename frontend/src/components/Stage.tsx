@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../store";
 import { ACTOR_LABEL } from "../missionsMeta";
 import type { Actor } from "../types";
+import FxLayer from "./FxLayer";
 
 const COLORS: Record<string, string> = {
   alice: "var(--alice)",
@@ -88,6 +89,7 @@ export default function Stage({ activeActor }: { activeActor: Actor }) {
         <ActorPane actor="eve" active={activeActor === "eve"} />
       </div>
       <WireStrip />
+      <FxLayer />
     </div>
   );
 }

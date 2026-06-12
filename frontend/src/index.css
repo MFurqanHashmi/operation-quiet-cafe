@@ -89,7 +89,7 @@ a { color: var(--amber); }
 .workspace { max-width: 880px; margin: 0 auto; width: 100%; padding: 22px; }
 
 /* ---------- stage ---------- */
-.stage {}
+.stage { position: relative; }
 .panes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .pane {
   background: linear-gradient(180deg, var(--panel), var(--bg2));
@@ -395,4 +395,78 @@ a { color: var(--amber); }
 .term-lesson-tag {
   display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--bob); margin-right: 6px;
+}
+
+/* ---- guidance-first terminal additions ---- */
+.term-empty { color: var(--muted); font-style: italic; }
+.term-why {
+  margin-bottom: 9px; font-size: 12.5px; line-height: 1.55; color: var(--cream);
+  background: #20180f; border: 1px solid var(--line); border-left: 3px solid var(--amber);
+  border-radius: 8px; padding: 8px 10px;
+}
+.term-why-tag {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--amber); margin-right: 6px;
+}
+.term-cmdlabel { font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.term-cmdaside { margin-top: 6px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.term-cmdaside strong { color: var(--cream); }
+.term-reset { margin-left: 8px; background: none; border: none; color: var(--amber);
+  cursor: pointer; font-size: 11.5px; padding: 0; text-decoration: underline; }
+.term-notice {
+  margin: -2px 0 10px; font-size: 12.5px; line-height: 1.55; color: #d8e8cf;
+  background: #16210f; border: 1px solid #355226; border-radius: 8px; padding: 8px 10px;
+}
+.term-notice-tag {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--bob); margin-right: 6px;
+}
+.term-parts-toggle { margin-top: 9px; background: none; border: none; color: var(--amber);
+  cursor: pointer; font-size: 12px; padding: 0; }
+.term-parts { margin-top: 8px; border-collapse: collapse; width: 100%; }
+.term-parts td { padding: 4px 8px; vertical-align: top; border-top: 1px solid var(--line);
+  font-size: 12px; line-height: 1.5; }
+.term-parts-tok { color: var(--amber); white-space: nowrap; width: 1%; font-size: 11.5px; }
+.term-parts-mean { color: var(--cream); }
+.term-warn { margin-top: 9px; font-size: 12.5px; line-height: 1.5; color: #f0c2bd;
+  background: #2a1512; border: 1px solid #5c2b25; border-radius: 8px; padding: 8px 10px;
+  font-family: "JetBrains Mono", Menlo, monospace; word-break: break-word; }
+
+/* ---------- FX layer: consequence animations over the stage ---------- */
+.fx-layer {
+  position: absolute; inset: 0; pointer-events: none; z-index: 30; overflow: hidden;
+}
+.fx-token {
+  position: absolute;
+  font-size: 30px; line-height: 1;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.55));
+  will-change: left, top, transform, opacity;
+}
+.fx-noise {
+  font-family: monospace; font-size: 17px; letter-spacing: 1px;
+  color: var(--eve); opacity: .85; text-shadow: 0 0 8px rgba(214,69,69,.5);
+}
+.fx-burst {
+  position: absolute;
+  font-size: 12px; font-weight: 800; letter-spacing: .04em; white-space: nowrap;
+  padding: 4px 9px; border-radius: 7px; text-transform: uppercase;
+}
+.fx-burst-bad  { color: #ffd9d9; background: rgba(214,69,69,.22); border: 1px solid var(--eve);
+                 box-shadow: 0 0 14px rgba(214,69,69,.45); }
+.fx-burst-good { color: #d9ffe6; background: rgba(74,176,109,.20); border: 1px solid var(--bob);
+                 box-shadow: 0 0 14px rgba(74,176,109,.40); }
+.fx-stamp {
+  position: absolute; left: 50%; top: 38%;
+  font-size: clamp(22px, 4vw, 40px); font-weight: 900; letter-spacing: .08em;
+  padding: 8px 22px; border-radius: 12px; text-transform: uppercase;
+}
+.fx-stamp-good { color: #c8ffd9; border: 4px solid var(--bob);
+                 background: rgba(74,176,109,.12); box-shadow: 0 0 26px rgba(74,176,109,.5); }
+.fx-stamp-bad  { color: #ffd2d2; border: 4px solid var(--eve);
+                 background: rgba(214,69,69,.12); box-shadow: 0 0 26px rgba(214,69,69,.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep results legible but skip the motion: show end-state burst/stamp only. */
+  .fx-token { display: none; }
 }

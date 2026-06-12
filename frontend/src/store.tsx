@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useReducer, useRef, useCallback } from "react";
-import type { SessionState, WSEvent, ChatBubble, Packet, Actor } from "./types";
+import type { SessionState, WSEvent, ChatBubble, Packet, Actor, FxItem } from "./types";
 import { api } from "./api";
 
 type Phase = "coldopen" | "playing" | "closed";
@@ -16,6 +16,7 @@ interface State {
   bobFingerprint: string | null;
   stationLog: string[];
   flash: { kind: string; ts: number } | null;
+  fx: FxItem[];
 }
 
 const initial: State = {
@@ -30,7 +31,16 @@ const initial: State = {
   bobFingerprint: null,
   stationLog: [],
   flash: null,
+  fx: [],
 };
+
+let _fxc = 0;
+const mkfx = (kind: FxItem["kind"], preview?: string): FxItem => ({
+  id: `fx-${Date.now()}-${_fxc++}`,
+  kind,
+  preview,
+  ts: Date.now(),
+});
 
 type Action =
   | { t: "SESSION"; s: SessionState }
@@ -38,6 +48,7 @@ type Action =
   | { t: "MISSION"; n: number }
   | { t: "WS"; e: WSEvent }
   | { t: "CONNECTED"; v: boolean }
+  | { t: "FX_DONE"; id: string }
   | { t: "CLEAR_ROOM" };
 
 const cap = <T,>(arr: T[], n = 6) => arr.slice(Math.max(0, arr.length - n));
@@ -52,8 +63,10 @@ function reducer(st: State, a: Action): State {
       return { ...st, mission: a.n };
     case "CONNECTED":
       return { ...st, connected: a.v };
+    case "FX_DONE":
+      return { ...st, fx: st.fx.filter((f) => f.id !== a.id) };
     case "CLEAR_ROOM":
-      return { ...st, bubbles: [], packets: [], eveNoise: false, keyExposed: false, stationLog: [] };
+      return { ...st, bubbles: [], packets: [], eveNoise: false, keyExposed: false, stationLog: [], fx: [] };
     case "WS": {
       const { type, payload } = a.e;
       switch (type) {
@@ -71,7 +84,8 @@ function reducer(st: State, a: Action): State {
               },
             ]),
           };
-        case "packet.sent":
+        case "packet.sent": {
+          const plain = !payload.encrypted;
           return {
             ...st,
             packets: cap([
@@ -85,22 +99,35 @@ function reducer(st: State, a: Action): State {
                 cipher: payload.cipher,
               },
             ], 8),
+            // Anything sent in the clear is visibly snatched by Eve.
+            fx: plain ? cap([...st.fx, mkfx("plaintext_grab", payload.preview)], 4) : st.fx,
           };
+        }
         case "eve.capture":
           return { ...st, eveNoise: !!payload.noise };
         case "key.exposed":
-          return { ...st, keyExposed: true, flash: { kind: "exposed", ts: Date.now() } };
+          return {
+            ...st,
+            keyExposed: true,
+            flash: { kind: "exposed", ts: Date.now() },
+            // Eve grabs the key AND uses it — the lock pops open.
+            fx: cap([...st.fx, mkfx("key_grab")], 4),
+          };
+        case "fx.play":
+          return { ...st, fx: cap([...st.fx, mkfx(payload.kind, payload.preview)], 4) };
         case "key.published":
           return { ...st, bobFingerprint: payload.pubkey_fingerprint };
         case "ssh.step":
           return { ...st, stationLog: [...st.stationLog, payload.text] };
         case "ssh.login_success":
-          return { ...st, flash: { kind: "ssh_ok", ts: Date.now() } };
+          return { ...st, flash: { kind: "ssh_ok", ts: Date.now() }, fx: cap([...st.fx, mkfx("granted")], 4) };
+        case "ssh.login_failed":
+          return { ...st, fx: cap([...st.fx, mkfx("denied")], 4) };
         case "door.warning":
-          return { ...st, flash: { kind: "warning", ts: Date.now() } };
+          return { ...st, flash: { kind: "warning", ts: Date.now() }, fx: cap([...st.fx, mkfx("denied")], 4) };
         case "door.verified":
         case "passkey.verified":
-          return { ...st, flash: { kind: "granted", ts: Date.now() } };
+          return { ...st, flash: { kind: "granted", ts: Date.now() }, fx: cap([...st.fx, mkfx("granted")], 4) };
         default:
           return st;
       }
@@ -119,6 +146,7 @@ interface Ctx {
   reset: () => Promise<void>;
   goPhase: (p: Phase) => void;
   goMission: (n: number) => void;
+  fxDone: (id: string) => void;
 }
 
 const StoreCtx = createContext<Ctx>(null as any);
@@ -194,9 +222,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const goPhase = (p: Phase) => dispatch({ t: "PHASE", p });
   const goMission = (n: number) => dispatch({ t: "MISSION", n });
+  const fxDone = useCallback((id: string) => dispatch({ t: "FX_DONE", id }), []);
 
   return (
-    <StoreCtx.Provider value={{ state, start, enter, doAction, verify, reset, goPhase, goMission }}>
+    <StoreCtx.Provider value={{ state, start, enter, doAction, verify, reset, goPhase, goMission, fxDone }}>
       {children}
     </StoreCtx.Provider>
   );

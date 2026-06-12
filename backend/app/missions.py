@@ -195,6 +195,8 @@ async def m3_lock(sess: Session, params: dict) -> dict:
 
     if owner == "bob":
         pt_out = pubkey.decrypt(sess.bob_priv, blob)  # Bob really opens it
+        await manager.send(sess.id, "fx.play", room="key_exchange",
+                           kind="pubkey_roundtrip")
         await manager.send(sess.id, "eve.capture", room="key_exchange",
                            noise=True, sample=blob[:64])
         await manager.send(sess.id, "actor.message", room="key_exchange",
@@ -209,6 +211,7 @@ async def m3_lock(sess: Session, params: dict) -> dict:
     if owner == "eve":
         # Consequence: Eve holds the matching private key and reads it.
         leaked = pubkey.decrypt(sess.eve_priv, blob)
+        await manager.send(sess.id, "fx.play", room="key_exchange", kind="eve_decrypts")
         await manager.send(sess.id, "eve.capture", room="key_exchange", noise=False)
         await manager.send(sess.id, "actor.message", room="key_exchange",
                            **{"from": "eve", "to": None, "encrypted": False,

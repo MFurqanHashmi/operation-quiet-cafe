@@ -233,11 +233,11 @@ export function Terminal({
   exec: (cmd: string, step: number) => Promise<any>;
 }) {
   const [head, setHead] = useState<any>(null);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<{ output: string; notice?: string }[]>([]);
   const [step, setStep] = useState<any>(null);
   const [input, setInput] = useState("");
-  const [hintOpen, setHintOpen] = useState(false);
-  const [reveal, setReveal] = useState("");
+  const [partsOpen, setPartsOpen] = useState(false);
+  const [warn, setWarn] = useState("");
   const [done, setDone] = useState(false);
   const [lesson, setLesson] = useState("");
   const [progress, setProgress] = useState("");
@@ -249,34 +249,55 @@ export function Terminal({
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [history, done]);
 
+  // When a new step arrives, pre-fill its command so nobody has to know or type it.
+  const loadStep = (s: any) => {
+    setStep(s);
+    setInput(s ? s.command || "" : "");
+    setPartsOpen(false);
+    setWarn("");
+  };
+
   const begin = async () => {
     const r = await exec("", 0);
     setHead({ tool: r.tool, blurb: r.blurb, href: r.href, intro: r.intro });
-    setStep(r.step);
+    loadStep(r.step);
     setProgress(r.progress || "");
     setStarted(true);
   };
 
-  const submit = async () => {
+  const run = async () => {
     const cmd = input.trim();
     if (!cmd || !step || busy) return;
     setBusy(true);
     try {
       const r = await exec(cmd, step.index);
-      if (r.output) setHistory((h) => [...h, r.output]);
       setProgress(r.progress || progress);
       if (r.match) {
-        setReveal(""); setHintOpen(false); setInput("");
-        if (r.done) { setDone(true); setLesson(r.lesson || ""); setStep(null); }
-        else setStep(r.step);
+        if (r.output) setHistory((h) => [...h, { output: r.output, notice: r.notice }]);
+        setWarn("");
+        if (r.done) {
+          setDone(true);
+          setLesson(r.lesson || "");
+          setStep(null);
+        } else {
+          loadStep(r.step);
+        }
       } else {
-        if (r.reveal) setReveal(r.reveal);
+        // They edited the command into something off-objective. Nudge, don't punish.
+        if (r.output) setHistory((h) => [...h, { output: r.output }]);
+        setWarn(
+          r.reveal
+            ? `That command doesn't fit this objective. The one for this step is:  ${r.reveal}`
+            : "That command doesn't fit this objective \u2014 reset it and try Run."
+        );
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!started) {
-    return <Button kind="ghost" onClick={begin}>Open the terminal</Button>;
+    return <Button kind="ghost" onClick={begin}>Open the guided terminal</Button>;
   }
 
   return (
@@ -288,8 +309,21 @@ export function Terminal({
           <div className="term-intro">{head.intro}</div>
         </div>
       )}
+
       <div className="term-screen" ref={scrollRef}>
-        {history.map((b, i) => <pre key={i} className="term-block">{b}</pre>)}
+        {history.length === 0 && (
+          <div className="term-empty">Output from each command appears here.</div>
+        )}
+        {history.map((b, i) => (
+          <div key={i}>
+            <pre className="term-block">{b.output}</pre>
+            {b.notice && (
+              <div className="term-notice">
+                <span className="term-notice-tag">What to notice</span> {b.notice}
+              </div>
+            )}
+          </div>
+        ))}
         {done && <pre className="term-block term-ok">{"\u2713 objective complete"}</pre>}
       </div>
 
@@ -297,29 +331,60 @@ export function Terminal({
         <div className="term-task">
           <div className="term-objective">
             <span className="term-step">Step {step.index + 1}/{step.total}</span>
-            {step.prompt}
+            {step.objective}
           </div>
-          <button className="term-hint-toggle" onClick={() => setHintOpen(!hintOpen)}>
-            {hintOpen ? "Hide hint" : "Need a hint?"}
-          </button>
-          {hintOpen && <div className="term-hint">{step.hint}</div>}
-          {reveal && (
-            <div className="term-reveal">
-              Stuck? Try: <code className="mono">{reveal}</code>
+
+          {step.why && (
+            <div className="term-why">
+              <span className="term-why-tag">Why</span> {step.why}
             </div>
           )}
+
+          <div className="term-cmdlabel">Run this command:</div>
           <div className="term-input-row">
-            <span className="term-prompt">analyst@quiet-cafe:~$</span>
+            <span className="term-prompt">{step.index >= 0 ? "field@quiet-cafe:~$" : "$"}</span>
             <input
               className="term-input"
               value={input}
-              placeholder={step.placeholder}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") run(); }}
+              spellCheck={false}
               autoFocus
             />
-            <Button kind="ghost" onClick={submit} disabled={busy}>{busy ? "Running\u2026" : "Run"}</Button>
+            <Button kind="primary" onClick={run} disabled={busy}>
+              {busy ? "Running\u2026" : "Run"}
+            </Button>
           </div>
+          <div className="term-cmdaside">
+            The command is filled in for you &mdash; just press <strong>Run</strong>. Curious folks can edit it and see what changes.
+            {input !== (step.command || "") && (
+              <button className="term-reset" onClick={() => { setInput(step.command || ""); setWarn(""); }}>
+                reset command
+              </button>
+            )}
+          </div>
+
+          {step.parts && step.parts.length > 0 && (
+            <>
+              <button className="term-parts-toggle" onClick={() => setPartsOpen(!partsOpen)}>
+                {partsOpen ? "Hide" : "What does each part mean?"}
+              </button>
+              {partsOpen && (
+                <table className="term-parts">
+                  <tbody>
+                    {step.parts.map((p: [string, string], i: number) => (
+                      <tr key={i}>
+                        <td className="term-parts-tok mono">{p[0]}</td>
+                        <td className="term-parts-mean">{p[1]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
+
+          {warn && <div className="term-warn">{warn}</div>}
         </div>
       )}
 
@@ -329,3 +394,4 @@ export function Terminal({
     </div>
   );
 }
+
