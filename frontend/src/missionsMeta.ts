@@ -16,6 +16,16 @@ export interface MissionMeta {
   debrief: string;         // payoff after the code
   whyItMatters: string;    // single woven paragraph (no tracks)
   codeHint: string;        // where the code surfaces
+  recall: {                // ties the mission to a concept from the talk
+    phrase?: string;
+    body: string;
+  };
+  predict?: {              // commit-a-hypothesis gate (think before acting)
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+    whyCorrect: string;
+  };
   checkpoint?: {           // deduction MCQ (answer validated server-side by index)
     prompt: string;
     options: string[];
@@ -53,6 +63,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For the people approving the budget, this is the cost of 'we'll add security later' — until you encrypt, every message is a postcard. For the people writing the code, it's why http:// and plaintext anything (logs, tokens, internal calls) is a quiet liability even inside a 'trusted' network.",
     codeHint: "Flag the one message that truly leaks the operation. Pick right and the code is yours; pick a decoy and you'll get a nudge.",
+    recall: {
+      phrase: "Why can't the person two tables over read it?",
+      body: "Remember the opening question of the talk: your message hops through routers and Wi-Fi you don't control, and by default it travels in the clear.",
+    },
+    predict: {
+      prompt: "You're about to read raw cafe traffic with no decryption key. What will the messages look like?",
+      options: [
+        "Scrambled - you'll have to crack each one",
+        "Plain and readable - no key needed",
+        "Only metadata; the contents stay hidden",
+      ],
+      correctIndex: 1,
+      whyCorrect: "Nothing here is encrypted, so every word is readable - exactly the exposure the rest of the cafe is built to fix.",
+    },
   },
   {
     n: 2,
@@ -78,6 +102,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For the strategy side, this is why 'just encrypt it' is never the whole story — the hard, expensive part is key distribution, not the scrambling. For the build side, it's the intuition behind why we don't ship a shared secret in the repo or pass one over the same channel we're trying to protect.",
     codeHint: "It's released when you correctly diagnose why Eve could read the message — answer the checkpoint to earn it.",
+    recall: {
+      phrase: "The hard part was never the scrambling - it's that both sides need the same key first.",
+      body: "From the talk: symmetric encryption uses one key to lock AND unlock. Scrambling is easy; getting that single key to the other side safely is the whole problem.",
+    },
+    predict: {
+      prompt: "You're about to send Bob the shared key over the same cafe Wi-Fi. What does Eve, still listening, end up with?",
+      options: [
+        "Nothing - the key is itself protected",
+        "A full copy of the key, so she can read everything",
+        "Only half the key, which is useless to her",
+      ],
+      correctIndex: 1,
+      whyCorrect: "One key both locks and unlocks, and you just sent it down the very line Eve is watching.",
+    },
     checkpoint: {
       prompt: "Eve read your message the instant the key crossed the wire. Why?",
       options: [
@@ -111,6 +149,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For the decision-makers, this is the quiet machinery behind every 'https' and every secure login your product relies on — worth knowing it exists and why it's non-negotiable. For the engineers, it's the difference between symmetric and asymmetric crypto, and why TLS uses the slow two-key dance only to bootstrap a fast shared key.",
     codeHint: "Inside Bob's decrypted reply — which only appears when you've locked with the correct key (his).",
+    recall: {
+      phrase: "One key you hand out, one key you never do.",
+      body: "The heart of the talk: a public key that only locks (safe to give anyone) and a private key that only unlocks (never shared). The secret never has to cross the wire.",
+    },
+    predict: {
+      prompt: "A public key can LOCK a message but not unlock it. Eve grabs a public key off the open board. What can she do with it?",
+      options: [
+        "Unlock any message that was locked with it",
+        "Only lock new messages - never unlock",
+        "Both lock and unlock, since it's public",
+      ],
+      correctIndex: 1,
+      whyCorrect: "A public key is one-way: it only locks. That's exactly why it's safe to hand out - now the real question is whose public key reaches Bob.",
+    },
   },
   {
     n: 4,
@@ -136,6 +188,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For the business, this is why 'it has the padlock, it's safe' is a dangerous half-truth your teams and customers fall for in phishing. For engineers, it's why we pin/verify certificates and don't blindly set verify=False to make an error go away.",
     codeHint: "Verify the real door, then nail the checkpoint on what exposed the fake — the code is released once you've done both.",
+    recall: {
+      phrase: "Encryption is not trust.",
+      body: "From the padlock slide: the padlock proves the line is encrypted - not who's on the other end. A phishing site gets a padlock too. Identity comes from the certificate's fingerprint.",
+    },
+    predict: {
+      prompt: "Two doors show the same name and both display a padlock. What's the one thing the impostor canNOT fake?",
+      options: [
+        "The padlock icon",
+        "The site's displayed name",
+        "The certificate fingerprint tied to Bob's real key",
+      ],
+      correctIndex: 2,
+      whyCorrect: "Names and padlocks are free to copy; only the fingerprint binds to Bob's actual key, which the impostor doesn't have.",
+    },
     checkpoint: {
       prompt: "Both doors showed a padlock and an encrypted line. What actually exposed the impostor?",
       options: [
@@ -169,6 +235,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For leadership, this reframes credentials: the strongest login is the one where the secret never travels and can't be phished or guessed. For engineers, it's the everyday case for SSH keys (and disabling password auth) on every server and Git host you touch.",
     codeHint: "Read off the station after a real key-based login — released once you also answer what crossed the wire.",
+    recall: {
+      phrase: "Nothing secret ever travels - so there's nothing on the wire to steal.",
+      body: "From the SSH slide: instead of sending a password, the server sends a puzzle, your machine solves it with your private key, and the server checks it with your public key. The private key never leaves your laptop.",
+    },
+    predict: {
+      prompt: "Your private key's only job is to prove it's you. What happens the moment a copy of it sits on a machine someone else can breach?",
+      options: [
+        "Nothing - it's safe as long as it's encrypted at rest",
+        "Anyone who grabs it can impersonate you everywhere it's trusted",
+        "It automatically rotates itself for safety",
+      ],
+      correctIndex: 1,
+      whyCorrect: "A private key is you. If it can be copied off a shared box, your identity walks out the door - so now decide which half actually belongs on the server.",
+    },
     checkpoint: {
       prompt: "You logged in with a key, no password typed. During that login, what actually crossed the wire?",
       options: [
@@ -202,6 +282,20 @@ export const MISSIONS: MissionMeta[] = [
     whyItMatters:
       "For the org, this is the punchline of the whole talk: stolen credentials cause most breaches, and passkeys delete the thing being stolen — fewer takeovers, less phishing risk. For engineers, it's why TOTP/WebAuthn and passwordless flows are worth the integration cost.",
     codeHint: "Released after your passwordless login verifies and you answer why passkeys beat phishing.",
+    recall: {
+      phrase: "You can't steal a password that doesn't exist.",
+      body: "From the final section: a 6-digit code is seed + time recomputed on both ends - better than a password but still a shared secret. Passkeys remove the secret entirely; the server holds only your public key.",
+    },
+    predict: {
+      prompt: "You record someone's live 6-digit code and try to reuse it 90 seconds later. What happens?",
+      options: [
+        "It works - codes can be reused",
+        "It's rejected - the code already expired",
+        "It works once more, then never again",
+      ],
+      correctIndex: 1,
+      whyCorrect: "TOTP codes are bound to a ~30-second window, so a captured code is dead almost immediately - that's the whole point.",
+    },
     checkpoint: {
       prompt: "Phishing thrives on stealing a secret you type. Why are passkeys phishing-resistant?",
       options: [

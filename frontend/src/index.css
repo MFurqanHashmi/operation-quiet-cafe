@@ -309,3 +309,90 @@ a { color: var(--amber); }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Recall: tie-back to the talk ---------- */
+.recall {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: #1b2620; border: 1px solid #2f5230; border-left: 3px solid var(--bob);
+  border-radius: 10px; padding: 10px 12px; margin: 4px 0 14px;
+}
+.recall-tag {
+  flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--bob);
+  background: #14241a; border: 1px solid #2f5230; border-radius: 6px;
+  padding: 3px 7px; margin-top: 1px;
+}
+.recall-body { font-size: 13px; line-height: 1.5; color: var(--cream); }
+.recall-phrase { margin-top: 5px; font-style: italic; color: var(--muted); }
+
+/* ---------- Predict: commit a hypothesis before acting ---------- */
+.predict {
+  background: #241c2a; border: 1px solid #4a3a55; border-radius: 12px;
+  padding: 12px 14px; margin: 4px 0 14px;
+}
+.predict-q { font-weight: 600; line-height: 1.5; margin-bottom: 10px; }
+.predict-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: #c79be0;
+  background: #2e2238; border: 1px solid #4a3a55; border-radius: 6px;
+  padding: 2px 7px; margin-right: 6px;
+}
+.predict-opts { display: flex; flex-direction: column; gap: 8px; }
+.predict-opt {
+  text-align: left; background: var(--bg2); border: 1px solid var(--line);
+  color: var(--cream); border-radius: 9px; padding: 9px 12px; cursor: pointer;
+  font-size: 13.5px; transition: border-color .15s, background .15s;
+}
+.predict-opt:hover:not(:disabled) { border-color: #8a6aa3; }
+.predict-opt:disabled { cursor: default; }
+.predict-right { border-color: var(--bob); background: #18271a; }
+.predict-close { border-color: var(--amber); background: #2a2113; }
+.predict-answer { border-color: var(--bob); }
+.predict-feedback {
+  margin-top: 10px; font-size: 13px; line-height: 1.55; color: var(--cream);
+  background: var(--bg2); border-radius: 9px; padding: 9px 11px;
+}
+.predict-cta { color: var(--amber); }
+
+/* ---------- Terminal: guided hands-on CLI ---------- */
+.term-head { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.term-head a { color: var(--amber); }
+.term-intro { margin-top: 6px; color: var(--cream); }
+.terminal { display: flex; flex-direction: column; gap: 10px; }
+.term-screen {
+  background: #0c0906; border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; max-height: 260px; overflow-y: auto;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 12px;
+}
+.term-block {
+  margin: 0 0 8px; white-space: pre-wrap; word-break: break-word;
+  color: #cfe7c4; line-height: 1.45;
+}
+.term-block:last-child { margin-bottom: 0; }
+.term-ok { color: var(--bob); font-weight: 600; }
+.term-task { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; }
+.term-objective { font-size: 13px; line-height: 1.5; color: var(--cream); margin-bottom: 8px; }
+.term-step {
+  display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--amber);
+  background: #221a10; border: 1px solid var(--line); border-radius: 6px;
+  padding: 2px 7px; margin-right: 7px;
+}
+.term-hint-toggle { background: none; border: none; color: var(--amber); cursor: pointer; font-size: 12px; padding: 0; }
+.term-hint { margin-top: 6px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.term-reveal { margin-top: 6px; font-size: 12.5px; color: #f0c2bd; }
+.term-input-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.term-prompt { flex: none; color: var(--bob); font-family: "JetBrains Mono", Menlo, monospace; font-size: 12px; }
+.term-input {
+  flex: 1; background: #0c0906; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--cream); padding: 8px 10px;
+  font-family: "JetBrains Mono", Menlo, monospace; font-size: 12.5px;
+}
+.term-input:focus { outline: none; border-color: var(--amber); }
+.term-lesson {
+  background: #18271a; border: 1px solid #2f5230; border-radius: 10px;
+  padding: 10px 12px; font-size: 13px; line-height: 1.55; color: #cfe9c4;
+}
+.term-lesson-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--bob); margin-right: 6px;
+}

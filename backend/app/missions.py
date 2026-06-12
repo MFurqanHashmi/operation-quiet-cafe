@@ -14,9 +14,17 @@ from .session import Session
 from . import config
 from .crypto import symmetric, pubkey, dh, certs, totp
 from . import ssh_client
+from . import tradecraft
+
+
+async def _tc(sess: Session, mission: int, params: dict) -> dict:
+    """Guided multi-step terminal for engineers (real CLI output)."""
+    return await tradecraft.run(sess, mission, params)
 
 
 async def handle(sess: Session, mission: int, action: str, params: dict) -> dict:
+    if action == "tc":  # guided terminal, shared across all missions
+        return await _tc(sess, mission, params)
     fn = _DISPATCH.get((mission, action))
     if not fn:
         return {"ok": False, "error": f"unknown action '{action}' for mission {mission}"}
